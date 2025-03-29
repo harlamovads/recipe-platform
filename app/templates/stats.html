@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}Recipe Statistics - Recipe Discovery Platform{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Recipe Analytics</h1>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Recipes by Cuisine</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="cuisineChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Recipes by Difficulty</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="difficultyChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Popular Tags</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="tagChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Average Preparation & Cooking Time</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="timeChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Recipe Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    <div class="col">
+                        <div class="card h-100 text-center border-0 bg-light">
+                            <div class="card-body">
+                                <h1 class="display-4">{{ stats.total_recipes }}</h1>
+                                <p class="card-text">Total Recipes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100 text-center border-0 bg-light">
+                            <div class="card-body">
+                                <h1 class="display-4">{{ stats.cuisines|length }}</h1>
+                                <p class="card-text">Different Cuisines</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100 text-center border-0 bg-light">
+                            <div class="card-body">
+                                <h1 class="display-4">{{ stats.popular_tags|length }}</h1>
+                                <p class="card-text">Unique Tags</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart.js configuration
+        const chartColors = [
+            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', 
+            '#6f42c1', '#5a5c69', '#2e59d9', '#17a673', '#2c9faf'
+        ];
+        
+        // Parse statistics data from the server
+        const statsData = {{ stats|tojson }};
+        
+        // CHART 1: Cuisine Distribution
+        const createCuisineChart = () => {
+            // Process the cuisine data
+            const cuisineData = statsData.cuisines.map(item => ({
+                label: item._id,
+                count: item.count
+            }));
+            
+            // Sort by count (descending)
+            cuisineData.sort((a, b) => b.count - a.count);
+            
+            // Take top 8 cuisines
+            const topCuisines = cuisineData.slice(0, 8);
+            
+            // Create the chart
+            const ctx = document.getElementById('cuisineChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topCuisines.map(item => item.label),
+                    datasets: [{
+                        label: 'Number of Recipes',
+                        data: topCuisines.map(item => item.count),
+                        backgroundColor: chartColors,
+                        borderColor: chartColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Recipes: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        };
+        
+        // CHART 2: Difficulty Distribution
+        const createDifficultyChart = () => {
+            // Process the difficulty data
+            const difficultyData = statsData.difficulties.map(item => ({
+                label: item._id,
+                count: item.count
+            }));
+            
+            // Create the chart
+            const ctx = document.getElementById('difficultyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: difficultyData.map(item => item.label),
+                    datasets: [{
+                        data: difficultyData.map(item => item.count),
+                        backgroundColor: chartColors.slice(0, difficultyData.length),
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw} recipes`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+        
+        // CHART 3: Popular Tags
+        const createTagChart = () => {
+            // Process the tag data
+            const tagData = statsData.popular_tags.map(item => ({
+                label: item._id,
+                count: item.count
+            }));
+            
+            // Sort by count (descending)
+            tagData.sort((a, b) => b.count - a.count);
+            
+            // Take top 10 tags
+            const topTags = tagData.slice(0, 10);
+            
+            // Create the chart
+            const ctx = document.getElementById('tagChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topTags.map(item => item.label),
+                    datasets: [{
+                        label: 'Number of Recipes',
+                        data: topTags.map(item => item.count),
+                        backgroundColor: chartColors.slice(0, topTags.length),
+                        borderColor: chartColors.slice(0, topTags.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Recipes: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        };
+        
+        // CHART 4: Preparation and Cooking Time
+        const createTimeChart = () => {
+            // Process the time data
+            const timeData = statsData.time_stats;
+            
+            // Create the chart
+            const ctx = document.getElementById('timeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Preparation Time', 'Cooking Time'],
+                    datasets: [{
+                        label: 'Average Time (minutes)',
+                        data: [
+                            timeData.avg_prep_time ? Math.round(timeData.avg_prep_time) : 0,
+                            timeData.avg_cook_time ? Math.round(timeData.avg_cook_time) : 0
+                        ],
+                        backgroundColor: [chartColors[0], chartColors[1]],
+                        borderColor: [chartColors[0], chartColors[1]],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Average: ${Math.round(context.raw)} minutes`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Minutes'
+                            }
+                        }
+                    }
+                }
+            });
+        };
+        
+            // Initialize all charts
+            try {
+                createCuisineChart();
+                createDifficultyChart();
+                createTagChart();
+                createTimeChart();
+            } catch (error) {
+                console.error('Error creating charts:', error);
+            }
+    });
+    </script>
+</script>
+{% endblock %}

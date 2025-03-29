@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account - Recipe Discovery Platform{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Create New Account</h4>
+            </div>
+            <div class="card-body p-4">
+                {% if error %}
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+                </div>
+                {% endif %}
+                
+                <form method="post" action="{{ url_for('user.register') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username*</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" id="username" name="username" required value="{{ form_data.username if form_data else '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email Address*</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input type="email" class="form-control" id="email" name="email" required value="{{ form_data.email if form_data else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Password*</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="confirm_password" class="form-label">Confirm Password*</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cooking_skill_level" class="form-label">Cooking Skill Level</label>
+                            <select class="form-select" id="cooking_skill_level" name="cooking_skill_level">
+                                <option value="Beginner" {% if form_data and form_data.cooking_skill_level == 'Beginner' %}selected{% endif %}>Beginner</option>
+                                <option value="Intermediate" {% if form_data and form_data.cooking_skill_level == 'Intermediate' %}selected{% endif %}>Intermediate</option>
+                                <option value="Advanced" {% if form_data and form_data.cooking_skill_level == 'Advanced' %}selected{% endif %}>Advanced</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Dietary Preferences</label>
+                        <div class="row row-cols-1 row-cols-md-3 g-3">
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="vegetarian" id="vegetarianCheck" name="dietary_preferences" {% if form_data and 'vegetarian' in form_data.dietary_preferences %}checked{% endif %}>
+                                    <label class="form-check-label" for="vegetarianCheck">
+                                        Vegetarian
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="vegan" id="veganCheck" name="dietary_preferences" {% if form_data and 'vegan' in form_data.dietary_preferences %}checked{% endif %}>
+                                    <label class="form-check-label" for="veganCheck">
+                                        Vegan
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="gluten-free" id="glutenFreeCheck" name="dietary_preferences" {% if form_data and 'gluten-free' in form_data.dietary_preferences %}checked{% endif %}>
+                                    <label class="form-check-label" for="glutenFreeCheck">
+                                        Gluten-Free
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="dairy-free" id="dairyFreeCheck" name="dietary_preferences" {% if form_data and 'dairy-free' in form_data.dietary_preferences %}checked{% endif %}>
+                                    <label class="form-check-label" for="dairyFreeCheck">
+                                        Dairy-Free
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="low-carb" id="lowCarbCheck" name="dietary_preferences" {% if form_data and 'low-carb' in form_data.dietary_preferences %}checked{% endif %}>
+                                    <label class="form-check-label" for="lowCarbCheck">
+                                        Low-Carb
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="nut-free" id="nutFreeCheck" name="dietary_preferences" {% if form_data and 'nut-free' in form_data.dietary_preferences %}checked{% endif %}>
+                                    <label class="form-check-label" for="nutFreeCheck">
+                                        Nut-Free
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Favorite Cuisines</label>
+                        <div class="row row-cols-1 row-cols-md-3 g-3">
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Italian" id="italianCheck" name="favorite_cuisines" {% if form_data and 'Italian' in form_data.favorite_cuisines %}checked{% endif %}>
+                                    <label class="form-check-label" for="italianCheck">
+                                        Italian
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Mexican" id="mexicanCheck" name="favorite_cuisines" {% if form_data and 'Mexican' in form_data.favorite_cuisines %}checked{% endif %}>
+                                    <label class="form-check-label" for="mexicanCheck">
+                                        Mexican
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Indian" id="indianCheck" name="favorite_cuisines" {% if form_data and 'Indian' in form_data.favorite_cuisines %}checked{% endif %}>
+                                    <label class="form-check-label" for="indianCheck">
+                                        Indian
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Chinese" id="chineseCheck" name="favorite_cuisines" {% if form_data and 'Chinese' in form_data.favorite_cuisines %}checked{% endif %}>
+                                    <label class="form-check-label" for="chineseCheck">
+                                        Chinese
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Thai" id="thaiCheck" name="favorite_cuisines" {% if form_data and 'Thai' in form_data.favorite_cuisines %}checked{% endif %}>
+                                    <label class="form-check-label" for="thaiCheck">
+                                        Thai
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="Japanese" id="japaneseCheck" name="favorite_cuisines" {% if form_data and 'Japanese' in form_data.favorite_cuisines %}checked{% endif %}>
+                                    <label class="form-check-label" for="japaneseCheck">
+                                        Japanese
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Create Account</button>
+                    </div>
+                </form>
+                
+                <hr class="my-4">
+                
+                <div class="text-center">
+                    <p class="mb-0">Already have an account?</p>
+                    <a href="{{ url_for('user.login') }}" class="btn btn-outline-primary mt-2">Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm_password');
+        const form = document.querySelector('form');
+        
+        form.addEventListener('submit', function(e) {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                confirmPasswordInput.focus();
+            }
+        });
+    });
+</script>
+{% endblock %}

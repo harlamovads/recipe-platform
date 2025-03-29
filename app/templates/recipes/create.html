@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Recipe{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ingredient-row, .instruction-row {
+        margin-bottom: 10px;
+    }
+    .remove-btn {
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Add New Recipe</h1>
+    <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Recipes
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form action="{{ url_for('recipe.create_recipe') }}" method="post" id="recipeForm">
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <div class="mb-3">
+                        <label for="recipeName" class="form-label">Recipe Name*</label>
+                        <input type="text" class="form-control" id="recipeName" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="recipeImage" class="form-label">Image URL</label>
+                        <input type="url" class="form-control" id="recipeImage" name="image_url" placeholder="https://example.com/image.jpg">
+                        <div class="form-text">Provide a URL to an image of your recipe</div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="mb-3">
+                        <label for="cuisine" class="form-label">Cuisine*</label>
+                        <select class="form-select" id="cuisine" name="cuisine" required>
+                            <option value="" selected disabled>Select Cuisine</option>
+                            <option value="American">American</option>
+                            <option value="Italian">Italian</option>
+                            <option value="Mexican">Mexican</option>
+                            <option value="Chinese">Chinese</option>
+                            <option value="Indian">Indian</option>
+                            <option value="Thai">Thai</option>
+                            <option value="Japanese">Japanese</option>
+                            <option value="French">French</option>
+                            <option value="Mediterranean">Mediterranean</option>
+                            <option value="Greek">Greek</option>
+                            <option value="Spanish">Spanish</option>
+                            <option value="Korean">Korean</option>
+                            <option value="Vietnamese">Vietnamese</option>
+                            <option value="Middle Eastern">Middle Eastern</option>
+                            <option value="Caribbean">Caribbean</option>
+                            <option value="International">International</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="difficulty" class="form-label">Difficulty*</label>
+                        <select class="form-select" id="difficulty" name="difficulty" required>
+                            <option value="" selected disabled>Select Difficulty</option>
+                            <option value="Easy">Easy</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-lg-6">
+                    <div class="mb-3">
+                        <label for="prepTime" class="form-label">Preparation Time (minutes)*</label>
+                        <input type="number" class="form-control" id="prepTime" name="preparation_time" min="1" required>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="mb-3">
+                        <label for="cookTime" class="form-label">Cooking Time (minutes)*</label>
+                        <input type="number" class="form-control" id="cookTime" name="cooking_time" min="1" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Ingredients</h5>
+                </div>
+                <div class="card-body">
+                    <div id="ingredientsContainer">
+                        <div class="row ingredient-row">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="ingredient_name[]" placeholder="Ingredient name (e.g., Flour)" required>
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" class="form-control" name="ingredient_quantity[]" placeholder="Amount (e.g., 2 cups)" required>
+                            </div>
+                            <div class="col-md-1 d-flex align-items-center">
+                                <i class="fas fa-times-circle text-danger remove-btn" onclick="removeIngredient(this)"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary mt-3" id="addIngredientBtn">
+                        <i class="fas fa-plus me-1"></i> Add Ingredient
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="instructions" class="form-label">Step-by-Step Instructions*</label>
+                        <textarea class="form-control" id="instructions" name="instructions" rows="6" placeholder="Enter step-by-step instructions, with each step on a new line." required></textarea>
+                        <div class="form-text">Each line will be treated as a separate step</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Nutritional Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="calories" class="form-label">Calories</label>
+                                <input type="number" class="form-control" id="calories" name="calories" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="protein" class="form-label">Protein (g)</label>
+                                <input type="number" class="form-control" id="protein" name="protein" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="carbs" class="form-label">Carbs (g)</label>
+                                <input type="number" class="form-control" id="carbs" name="carbs" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="fat" class="form-label">Fat (g)</label>
+                                <input type="number" class="form-control" id="fat" name="fat" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="tags" class="form-label">Tags</label>
+                <input type="text" class="form-control" id="tags" name="tags" placeholder="vegetarian, dessert, quick-meal (comma-separated)">
+                <div class="form-text">Enter tags separated by commas</div>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <button type="reset" class="btn btn-outline-secondary me-md-2">Reset</button>
+                <button type="submit" class="btn btn-primary">Save Recipe</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add ingredient button
+        document.getElementById('addIngredientBtn').addEventListener('click', function() {
+            const container = document.getElementById('ingredientsContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'row ingredient-row mt-2';
+            newRow.innerHTML = `
+                <div class="col-md-6">
+                    <input type="text" class="form-control" name="ingredient_name[]" placeholder="Ingredient name (e.g., Flour)" required>
+                </div>
+                <div class="col-md-5">
+                    <input type="text" class="form-control" name="ingredient_quantity[]" placeholder="Amount (e.g., 2 cups)" required>
+                </div>
+                <div class="col-md-1 d-flex align-items-center">
+                    <i class="fas fa-times-circle text-danger remove-btn" onclick="removeIngredient(this)"></i>
+                </div>
+            `;
+            container.appendChild(newRow);
+        });
+        
+        // Form submission
+        document.getElementById('recipeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate form
+            if (!this.checkValidity()) {
+                e.stopPropagation();
+                this.classList.add('was-validated');
+                return;
+            }
+            
+            // Process nutritional information
+            const nutritionalInfo = {
+                calories: parseInt(document.getElementById('calories').value) || 0,
+                protein: parseInt(document.getElementById('protein').value) || 0,
+                carbs: parseInt(document.getElementById('carbs').value) || 0,
+                fat: parseInt(document.getElementById('fat').value) || 0
+            };
+            
+            // Process tags
+            const tagsInput = document.getElementById('tags').value;
+            const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+            
+            // Create hidden fields for JSON data
+            const nutritionalInfoInput = document.createElement('input');
+            nutritionalInfoInput.type = 'hidden';
+            nutritionalInfoInput.name = 'nutritional_info';
+            nutritionalInfoInput.value = JSON.stringify(nutritionalInfo);
+            this.appendChild(nutritionalInfoInput);
+            
+            // Submit the form
+            this.submit();
+        });
+    });
+    
+    // Remove ingredient function
+    function removeIngredient(element) {
+        const row = element.closest('.ingredient-row');
+        
+        // Only remove if there's more than one ingredient
+        const ingredientRows = document.querySelectorAll('.ingredient-row');
+        if (ingredientRows.length > 1) {
+            row.remove();
+        } else {
+            alert('Recipe must have at least one ingredient.');
+        }
+    }
+</script>
+{% endblock %}

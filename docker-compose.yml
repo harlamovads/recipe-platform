@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: recipe-platform-db
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: recipe_platform
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
+    ports:
+      - "${MONGO_PORT:-27018}:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - recipe-network
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    container_name: recipe-platform-app
+    restart: always
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - FLASK_CONFIG=${FLASK_CONFIG:-development}
+      - FLASK_DEBUG=${FLASK_DEBUG:-false}
+      - SECRET_KEY=${SECRET_KEY:-change_me_in_production}
+      - MONGODB_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/recipe_platform?authSource=admin
+    ports:
+      - "${APP_PORT:-5000}:5000"
+    volumes:
+      - ./app:/app/app
+    networks:
+      - recipe-network
+
+  # Optional nginx service for production
+  #nginx:
+  #  image: nginx:latest
+  #  container_name: recipe-platform-nginx
+  #  restart: always
+  #  ports:
+  #    - "80:80"
+  #    - "443:443"
+  #  volumes:
+  #    - ./docker/nginx/conf.d:/etc/nginx/conf.d
+  #    - ./docker/nginx/ssl:/etc/nginx/ssl
+  #  depends_on:
+  #    - app
+  #  networks:
+  #    - recipe-network
+
+networks:
+  recipe-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

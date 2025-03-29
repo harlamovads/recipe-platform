@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}My Favorite Recipes{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Favorite Recipes</h1>
+    <a href="{{ url_for('user.user_profile') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Profile
+    </a>
+</div>
+
+{% if recipes %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for recipe in recipes %}
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-card">
+                <div class="position-relative">
+                    {% if recipe.image_url %}
+                    <img src="{{ recipe.image_url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ recipe.name }}">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ recipe.name }}">
+                    {% endif %}
+                    <div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-{{ 'success' if recipe.difficulty == 'Easy' else 'warning' if recipe.difficulty == 'Medium' else 'danger' }}">
+                            {{ recipe.difficulty }}
+                        </span>
+                    </div>
+                    <button class="position-absolute top-0 end-0 m-2 btn btn-sm btn-danger rounded-circle favorite-toggle" data-recipe-id="{{ recipe._id }}">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ recipe.name }}</h5>
+                    <p class="card-text text-muted mb-1">{{ recipe.cuisine }} Cuisine</p>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <small class="text-muted me-2">
+                                <i class="far fa-clock"></i> {{ recipe.preparation_time + recipe.cooking_time }} mins
+                            </small>
+                            <small class="text-muted">
+                                <i class="fas fa-fire"></i> {{ recipe.nutritional_info.get('calories', 0) }} cal
+                            </small>
+                        </div>
+                    </div>
+                    <div class="recipe-tags mb-3">
+                        {% for tag in recipe.tags[:3] %}
+                        <a href="{{ url_for('recipe.list_recipes', tag=tag) }}" class="badge bg-light text-dark text-decoration-none me-1">{{ tag }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0 d-grid gap-2">
+                    <a href="{{ url_for('recipe.get_recipe', recipe_id=recipe._id) }}" class="btn btn-outline-primary">View Recipe</a>
+                    <button class="btn btn-outline-danger remove-favorite-btn" data-recipe-id="{{ recipe._id }}">
+                        <i class="fas fa-heart-broken me-1"></i> Remove from Favorites
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info text-center">
+        <i class="far fa-heart fa-3x mb-3"></i>
+        <h4>You haven't saved any favorite recipes yet.</h4>
+        <p class="mb-4">Explore our recipes and start saving your favorites!</p>
+        <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-primary">Browse Recipes</a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle removing favorites
+        const removeFavoriteButtons = document.querySelectorAll('.remove-favorite-btn');
+        removeFavoriteButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const recipeId = this.getAttribute('data-recipe-id');
+                const card = this.closest('.col');
+                
+                // Remove from favorites via API
+                fetch(`/users/recipes/${recipeId}/favorite`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Remove the card with animation
+                        card.style.transition = 'opacity 0.5s ease';
+                        card.style.opacity = '0';
+                        setTimeout(() => {
+                            card.remove();
+                            
+                            // Check if any recipes left
+                            if (document.querySelectorAll('.col').length === 0) {
+                                // Show empty state message
+                                const emptyState = document.createElement('div');
+                                emptyState.className = 'alert alert-info text-center';
+                                emptyState.innerHTML = `
+                                    <i class="far fa-heart fa-3x mb-3"></i>
+                                    <h4>You haven't saved any favorite recipes yet.</h4>
+                                    <p class="mb-4">Explore our recipes and start saving your favorites!</p>
+                                    <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-primary">Browse Recipes</a>
+                                `;
+                                document.querySelector('.row').replaceWith(emptyState);
+                            }
+                        }, 500);
+                        
+                        // Show notification
+                        const notification = document.createElement('div');
+                        notification.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3';
+                        notification.style.zIndex = '1050';
+                        notification.innerHTML = `
+                            <i class="fas fa-check-circle me-2"></i> Recipe removed from favorites
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+                        document.body.appendChild(notification);
+                        
+                        // Auto dismiss after 3 seconds
+                        setTimeout(() => {
+                            notification.classList.remove('show');
+                            setTimeout(() => notification.remove(), 150);
+                        }, 3000);
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Recipe Discovery Platform - Find and Share Recipes{% endblock %}
+
+{% block content %}
+<section class="hero-section py-5 mb-5 bg-light rounded">
+    <div class="row align-items-center">
+        <div class="col-lg-6">
+            <h1 class="display-4 fw-bold">Discover Your Next Favorite Recipe</h1>
+            <p class="lead my-4">Explore thousands of recipes, save your favorites, and get personalized recommendations based on your taste preferences.</p>
+            <div class="d-flex gap-3 mt-4">
+                <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-primary btn-lg">Browse Recipes</a>
+                {% if not session.get('user_id') %}
+                <a href="{{ url_for('user.register') }}" class="btn btn-outline-secondary btn-lg">Join Now</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <img src="{{ url_for('static', filename='img/hero-image.jpg') }}" alt="Delicious Food" class="img-fluid rounded shadow">
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Popular Recipes</h2>
+        <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-outline-primary">View All</a>
+    </div>
+    
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for recipe in popular_recipes %}
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-card">
+                <div class="position-relative">
+                    {% if recipe.image_url %}
+                    <img src="{{ recipe.image_url }}" class="card-img-top" alt="{{ recipe.name }}">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="card-img-top" alt="{{ recipe.name }}">
+                    {% endif %}
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-{{ 'success' if recipe.difficulty == 'Easy' else 'warning' if recipe.difficulty == 'Medium' else 'danger' }}">
+                            {{ recipe.difficulty }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ recipe.name }}</h5>
+                    <p class="card-text text-muted">{{ recipe.cuisine }} Cuisine</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="prep-time">
+                            <small class="text-muted">
+                                <i class="far fa-clock me-1"></i>{{ recipe.preparation_time + recipe.cooking_time }} mins
+                            </small>
+                        </div>
+                        <div class="recipe-tags">
+                            {% for tag in recipe.tags[:2] %}
+                            <span class="badge bg-light text-dark me-1">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="{{ url_for('recipe.get_recipe', recipe_id=recipe._id) }}" class="btn btn-sm btn-outline-primary w-100">View Recipe</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="row">
+        <div class="col-md-4 mb-4 mb-md-0">
+            <div class="card text-center h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-search fa-3x text-primary"></i>
+                    </div>
+                    <h3 class="card-title">Discover</h3>
+                    <p class="card-text">Search for recipes by ingredients, cuisine, or dietary preferences. Find exactly what you're looking for with our advanced filters.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4 mb-md-0">
+            <div class="card text-center h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-heart fa-3x text-danger"></i>
+                    </div>
+                    <h3 class="card-title">Save</h3>
+                    <p class="card-text">Build your personal collection by saving your favorite recipes. Create your own digital cookbook that's always accessible.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-utensils fa-3x text-success"></i>
+                    </div>
+                    <h3 class="card-title">Cook</h3>
+                    <p class="card-text">Follow step-by-step instructions with clear ingredients lists. Make delicious meals with confidence every time.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-4 text-center bg-light rounded">
+    <h2 class="mb-4">Ready to Start Cooking?</h2>
+    <p class="lead mb-4">Join our community of food enthusiasts today and get personalized recipe recommendations.</p>
+    <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-primary btn-lg">Explore Recipes</a>
+</section>
+{% endblock %}

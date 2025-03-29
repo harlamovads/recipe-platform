@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}Recipes - Browse All Recipes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-sidebar {
+        position: sticky;
+        top: 20px;
+    }
+    .recipe-card {
+        transition: transform 0.3s ease;
+    }
+    .recipe-card:hover {
+        transform: translateY(-5px);
+    }
+    .recipe-img-top {
+        height: 200px;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Discover Recipes</h1>
+    <div>
+        <a href="{{ url_for('recipe.create_recipe') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Add Recipe
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Filters Sidebar -->
+    <div class="col-lg-3 mb-4">
+        <div class="card filter-sidebar">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Filter Recipes</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('recipe.list_recipes') }}" method="get" id="filterForm">
+                    {% if query %}
+                    <input type="hidden" name="q" value="{{ query }}">
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Cuisine</label>
+                        <select class="form-select" name="cuisine" id="cuisineFilter">
+                            <option value="">All Cuisines</option>
+                            <option value="Italian" {% if filters.cuisine == 'Italian' %}selected{% endif %}>Italian</option>
+                            <option value="Mexican" {% if filters.cuisine == 'Mexican' %}selected{% endif %}>Mexican</option>
+                            <option value="Indian" {% if filters.cuisine == 'Indian' %}selected{% endif %}>Indian</option>
+                            <option value="Thai" {% if filters.cuisine == 'Thai' %}selected{% endif %}>Thai</option>
+                            <option value="Chinese" {% if filters.cuisine == 'Chinese' %}selected{% endif %}>Chinese</option>
+                            <option value="Japanese" {% if filters.cuisine == 'Japanese' %}selected{% endif %}>Japanese</option>
+                            <option value="French" {% if filters.cuisine == 'French' %}selected{% endif %}>French</option>
+                            <option value="Greek" {% if filters.cuisine == 'Greek' %}selected{% endif %}>Greek</option>
+                            <option value="American" {% if filters.cuisine == 'American' %}selected{% endif %}>American</option>
+                            <option value="Mediterranean" {% if filters.cuisine == 'Mediterranean' %}selected{% endif %}>Mediterranean</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Difficulty</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="difficulty" value="Easy" id="easyCheck" {% if 'Easy' in filters.difficulty %}checked{% endif %}>
+                            <label class="form-check-label" for="easyCheck">
+                                Easy
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="difficulty" value="Medium" id="mediumCheck" {% if 'Medium' in filters.difficulty %}checked{% endif %}>
+                            <label class="form-check-label" for="mediumCheck">
+                                Medium
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="difficulty" value="Hard" id="hardCheck" {% if 'Hard' in filters.difficulty %}checked{% endif %}>
+                            <label class="form-check-label" for="hardCheck">
+                                Hard
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Diet Type</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="tag" value="vegetarian" id="vegetarianCheck" {% if 'vegetarian' in filters.tags %}checked{% endif %}>
+                            <label class="form-check-label" for="vegetarianCheck">
+                                Vegetarian
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="tag" value="vegan" id="veganCheck" {% if 'vegan' in filters.tags %}checked{% endif %}>
+                            <label class="form-check-label" for="veganCheck">
+                                Vegan
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="tag" value="gluten-free" id="glutenFreeCheck" {% if 'gluten-free' in filters.tags %}checked{% endif %}>
+                            <label class="form-check-label" for="glutenFreeCheck">
+                                Gluten-Free
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="tag" value="dairy-free" id="dairyFreeCheck" {% if 'dairy-free' in filters.tags %}checked{% endif %}>
+                            <label class="form-check-label" for="dairyFreeCheck">
+                                Dairy-Free
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Cooking Time</label>
+                        <select class="form-select" name="cooking_time_max">
+                            <option value="">Any Time</option>
+                            <option value="15" {% if filters.cooking_time_max == 15 %}selected{% endif %}>15 minutes or less</option>
+                            <option value="30" {% if filters.cooking_time_max == 30 %}selected{% endif %}>30 minutes or less</option>
+                            <option value="45" {% if filters.cooking_time_max == 45 %}selected{% endif %}>45 minutes or less</option>
+                            <option value="60" {% if filters.cooking_time_max == 60 %}selected{% endif %}>1 hour or less</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <button type="button" class="btn btn-outline-secondary" id="clearFilters">Clear Filters</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recipe Grid -->
+    <div class="col-lg-9">
+        {% if query %}
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-search me-2"></i> Search results for: <strong>"{{ query }}"</strong>
+            <a href="{{ url_for('recipe.list_recipes') }}" class="ms-2 text-decoration-none"><i class="fas fa-times"></i></a>
+        </div>
+        {% endif %}
+        
+        {% if recipes %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 mb-4">
+            {% for recipe in recipes %}
+            <div class="col">
+                <div class="card h-100 shadow-sm recipe-card">
+                    <div class="position-relative">
+                        {% if recipe.image_url %}
+                        <img src="{{ recipe.image_url }}" class="card-img-top recipe-img-top" alt="{{ recipe.name }}">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="card-img-top recipe-img-top" alt="{{ recipe.name }}">
+                        {% endif %}
+                        <div class="position-absolute top-0 start-0 m-2">
+                            <span class="badge bg-{{ 'success' if recipe.difficulty == 'Easy' else 'warning' if recipe.difficulty == 'Medium' else 'danger' }}">
+                                {{ recipe.difficulty }}
+                            </span>
+                        </div>
+                        {% if session.get('user_id') %}
+                        <button class="position-absolute top-0 end-0 m-2 btn btn-sm btn-light rounded-circle favorite-toggle" data-recipe-id="{{ recipe._id }}">
+                            <i class="far fa-heart"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ recipe.name }}</h5>
+                        <p class="card-text text-muted mb-1">{{ recipe.cuisine }} Cuisine</p>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <small class="text-muted me-2">
+                                    <i class="far fa-clock"></i> {{ recipe.preparation_time + recipe.cooking_time }} mins
+                                </small>
+                                <small class="text-muted">
+                                    <i class="fas fa-fire"></i> {{ recipe.nutritional_info.get('calories', 0) }} cal
+                                </small>
+                            </div>
+                        </div>
+                        <div class="recipe-tags mb-3">
+                            {% for tag in recipe.tags[:3] %}
+                            <a href="{{ url_for('recipe.list_recipes', tag=tag) }}" class="badge bg-light text-dark text-decoration-none me-1">{{ tag }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0 d-grid">
+                        <a href="{{ url_for('recipe.get_recipe', recipe_id=recipe._id) }}" class="btn btn-outline-primary">View Recipe</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if pagination.total_pages > 1 %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('recipe.list_recipes', page=pagination.page-1, q=query, **filters) }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                
+                {% for page_num in range(1, pagination.total_pages + 1) %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('recipe.list_recipes', page=page_num, q=query, **filters) }}">{{ page_num }}</a>
+                </li>
+                {% endfor %}
+                
+                <li class="page-item {% if pagination.page == pagination.total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('recipe.list_recipes', page=pagination.page+1, q=query, **filters) }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> No recipes found. Try adjusting your filters or <a href="{{ url_for('recipe.create_recipe') }}">add a new recipe</a>.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Clear filters
+        document.getElementById('clearFilters').addEventListener('click', function() {
+            const filterForm = document.getElementById('filterForm');
+            const inputs = filterForm.querySelectorAll('input:not([name="q"]), select');
+            
+            inputs.forEach(input => {
+                if (input.type === 'checkbox') {
+                    input.checked = false;
+                } else {
+                    input.value = '';
+                }
+            });
+            
+            filterForm.submit();
+        });
+        
+        // Favorite toggle buttons
+        const favoriteBtns = document.querySelectorAll('.favorite-toggle');
+        favoriteBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const recipeId = this.getAttribute('data-recipe-id');
+                const icon = this.querySelector('i');
+                
+                if (icon.classList.contains('fas')) {
+                    // Remove from favorites
+                    fetch(`/users/recipes/${recipeId}/favorite`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
+                            this.classList.remove('btn-danger');
+                            this.classList.add('btn-light');
+                        }
+                    });
+                } else {
+                    // Add to favorites
+                    fetch(`/users/recipes/${recipeId}/favorite`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
+                            this.classList.remove('btn-light');
+                            this.classList.add('btn-danger');
+                        }
+                    });
+                }
+            });
+        });
+        
+        // Check which recipes are already favorites
+        fetch('/users/favorites', {
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(favorites => {
+            const favoriteIds = favorites.map(recipe => recipe._id);
+            
+            favoriteBtns.forEach(btn => {
+                const recipeId = btn.getAttribute('data-recipe-id');
+                const icon = btn.querySelector('i');
+                
+                if (favoriteIds.includes(recipeId)) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    btn.classList.remove('btn-light');
+                    btn.classList.add('btn-danger');
+                }
+            });
+        })
+        .catch(error => console.error('Error fetching favorites:', error));
+    });
+</script>
+{% endblock %}

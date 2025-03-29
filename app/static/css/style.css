@@ -1,0 +1,162 @@
+/* Recipe Discovery Platform - Custom Styles */
+
+/* General styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+
+a {
+    text-decoration: none;
+}
+
+/* Hero section */
+.hero-section {
+    padding: 3rem 2rem;
+    background-color: #f8f9fa;
+    border-radius: 1rem;
+    margin-bottom: 3rem;
+}
+
+/* Card hover effects */
+.hover-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Feature icons */
+.feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    width: 80px;
+    border-radius: 50%;
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+    margin-bottom: 1rem;
+}
+
+/* Recipe cards */
+.recipe-card .card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Favorite button */
+.favorite-btn {
+    transition: all 0.3s ease;
+}
+
+.favorite-btn.active {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.favorite-toggle {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.favorite-toggle i {
+    font-size: 1.2rem;
+}
+
+/* Filter sidebar */
+.filter-sidebar {
+    position: sticky;
+    top: 20px;
+}
+
+/* Recipe detail */
+.instruction-list li {
+    margin-bottom: 1.5rem;
+    padding-left: 2.5rem;
+    position: relative;
+}
+
+.instruction-list li::before {
+    content: attr(data-number);
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background-color: #0d6efd;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.875rem;
+    font-weight: bold;
+}
+
+.nutrition-item {
+    padding: 1rem;
+    text-align: center;
+    border-radius: 0.25rem;
+    background-color: #f8f9fa;
+    transition: background-color 0.3s ease;
+}
+
+.nutrition-item:hover {
+    background-color: #e9ecef;
+}
+
+.nutrition-value {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.nutrition-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* User profile */
+.profile-stats .card {
+    transition: transform 0.3s ease;
+}
+
+.profile-stats .card:hover {
+    transform: scale(1.05);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .hero-section {
+        padding: 2rem 1rem;
+        text-align: center;
+    }
+    
+    .recipe-card .card-img-top {
+        height: 180px;
+    }
+    
+    .filter-sidebar {
+        position: static;
+        margin-bottom: 2rem;
+    }
+}

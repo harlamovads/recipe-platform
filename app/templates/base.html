@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Recipe Discovery Platform{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <i class="fas fa-utensils me-2"></i>Recipe Hub
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.index') }}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('recipe.list_recipes') }}">Recipes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.stats') }}">Statistics</a>
+                    </li>
+                </ul>
+                <form class="d-flex me-2" action="{{ url_for('recipe.list_recipes') }}" method="get">
+                    <input class="form-control me-2" type="search" placeholder="Search recipes..." name="q">
+                    <button class="btn btn-outline-light" type="submit">Search</button>
+                </form>
+                <ul class="navbar-nav">
+                    {% if session.get('user_id') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>Account
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('user.user_profile') }}">Profile</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('user.favorites') }}">My Favorites</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('user.recommendations') }}">Recommendations</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('recipe.create_recipe') }}">Add Recipe</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('user.logout') }}">Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('user.login') }}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('user.register') }}">Register</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Recipe Discovery Platform</h5>
+                    <p>Discover, share, and enjoy amazing recipes from around the world.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('main.index') }}" class="text-white">Home</a></li>
+                        <li><a href="{{ url_for('recipe.list_recipes') }}" class="text-white">Recipes</a></li>
+                        <li><a href="{{ url_for('main.stats') }}" class="text-white">Statistics</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Connect</h5>
+                    <div class="d-flex">
+                        <a href="#" class="text-white me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-pinterest"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12 text-center">
+                    <p class="mb-0">&copy; {{ current_year }} Recipe Discovery Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

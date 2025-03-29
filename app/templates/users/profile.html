@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - Recipe Discovery Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Profile Information</h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <img src="{{ url_for('static', filename='img/user-avatar.jpg') }}" alt="User Avatar" class="rounded-circle img-thumbnail" width="150" height="150">
+                </div>
+                <h3 class="mb-0">{{ user.username }}</h3>
+                <p class="text-muted">{{ user.email }}</p>
+                <p class="mb-2">
+                    <span class="badge bg-info text-dark">{{ user.cooking_skill_level }}</span>
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('user.edit_profile') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-1"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
+            <div class="card-body border-top">
+                <h5 class="mb-3">Dietary Preferences</h5>
+                {% if user.dietary_preferences %}
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for pref in user.dietary_preferences %}
+                            <span class="badge bg-success">{{ pref }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No dietary preferences specified</p>
+                {% endif %}
+                
+                <h5 class="mt-3 mb-3">Favorite Cuisines</h5>
+                {% if user.favorite_cuisines %}
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for cuisine in user.favorite_cuisines %}
+                            <span class="badge bg-danger">{{ cuisine }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No favorite cuisines specified</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">My Recipe Activity</h4>
+                <a href="{{ url_for('recipe.create_recipe') }}" class="btn btn-light btn-sm">
+                    <i class="fas fa-plus me-1"></i> Add Recipe
+                </a>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="favorites-tab" data-bs-toggle="tab" data-bs-target="#favorites" type="button" role="tab" aria-controls="favorites" aria-selected="true">
+                            <i class="fas fa-heart me-1"></i> Favorites
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="my-recipes-tab" data-bs-toggle="tab" data-bs-target="#my-recipes" type="button" role="tab" aria-controls="my-recipes" aria-selected="false">
+                            <i class="fas fa-utensils me-1"></i> My Recipes
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="recommendations-tab" data-bs-toggle="tab" data-bs-target="#recommendations" type="button" role="tab" aria-controls="recommendations" aria-selected="false">
+                            <i class="fas fa-lightbulb me-1"></i> Recommendations
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content p-3" id="profileTabContent">
+                    <div class="tab-pane fade show active" id="favorites" role="tabpanel" aria-labelledby="favorites-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Saved Recipes</h5>
+                            <a href="{{ url_for('user.favorites') }}" class="text-decoration-none">View All</a>
+                        </div>
+                        
+                        {% if user.favorite_recipes %}
+                            <div class="row row-cols-1 row-cols-md-2 g-4">
+                                {% for recipe_id in user.favorite_recipes[:4] %}
+                                    <div class="col">
+                                        <div class="card h-100 recipe-card">
+                                            <div class="row g-0">
+                                                <div class="col-4">
+                                                    <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="Recipe">
+                                                </div>
+                                                <div class="col-8">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title">{{ recipe_id }}</h5>
+                                                        <p class="card-text text-muted">Italian Cuisine</p>
+                                                        <a href="{{ url_for('recipe.get_recipe', recipe_id=recipe_id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> You haven't saved any recipes yet.
+                                <a href="{{ url_for('recipe.list_recipes') }}" class="alert-link">Browse recipes</a> and save your favorites!
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="tab-pane fade" id="my-recipes" role="tabpanel" aria-labelledby="my-recipes-tab">
+                        <h5 class="mb-3">Recipes You've Created</h5>
+                        {% if user_recipes and user_recipes.recipes %}
+                            <div class="row row-cols-1 row-cols-md-2 g-4">
+                                {% for recipe in user_recipes.recipes %}
+                                    <div class="col">
+                                        <div class="card h-100 recipe-card">
+                                            <div class="row g-0">
+                                                <div class="col-4">
+                                                    {% if recipe.image_url %}
+                                                    <img src="{{ recipe.image_url }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="{{ recipe.name }}">
+                                                    {% else %}
+                                                    <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="{{ recipe.name }}">
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-8">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title">{{ recipe.name }}</h5>
+                                                        <p class="card-text text-muted">{{ recipe.cuisine }} Cuisine</p>
+                                                        <a href="{{ url_for('recipe.get_recipe', recipe_id=recipe._id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                                        <a href="{{ url_for('recipe.edit_recipe', recipe_id=recipe._id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if user_recipes.pagination.total_items > 4 %}
+                                <div class="text-center mt-3">
+                                    <a href="#" class="btn btn-outline-primary">View All My Recipes ({{ user_recipes.pagination.total_items }})</a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> You haven't created any recipes yet.
+                                <a href="{{ url_for('recipe.create_recipe') }}" class="alert-link">Create your first recipe</a> to share with others!
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="tab-pane fade" id="recommendations" role="tabpanel" aria-labelledby="recommendations-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Personalized Recommendations</h5>
+                            <a href="{{ url_for('user.recommendations') }}" class="text-decoration-none">View All</a>
+                        </div>
+                        
+                        <div class="alert alert-primary">
+                            <i class="fas fa-lightbulb me-2"></i> Based on your preferences, you might enjoy these recipes.
+                        </div>
+                        
+                        <div class="row row-cols-1 row-cols-md-2 g-4">
+                            <div class="col">
+                                <div class="card h-100 recipe-card">
+                                    <div class="row g-0">
+                                        <div class="col-4">
+                                            <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="Recipe">
+                                        </div>
+                                        <div class="col-8">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Mediterranean Salad</h5>
+                                                <p class="card-text text-muted">Greek Cuisine</p>
+                                                <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="card h-100 recipe-card">
+                                    <div class="row g-0">
+                                        <div class="col-4">
+                                            <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="Recipe">
+                                        </div>
+                                        <div class="col-8">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Spicy Tofu Stir Fry</h5>
+                                                <p class="card-text text-muted">Thai Cuisine</p>
+                                                <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">Activity Stats</h4>
+            </div>
+            <div class="card-body">
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    <div class="col">
+                        <div class="card h-100 text-center border-0 bg-light">
+                            <div class="card-body">
+                                <h1 class="display-4">{{ user.favorite_recipes|length }}</h1>
+                                <p class="card-text">Recipes Saved</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100 text-center border-0 bg-light">
+                            <div class="card-body">
+                                <h1 class="display-4">{{ user_recipes.pagination.total_items|default(0) }}</h1>
+                                <p class="card-text">Recipes Created</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100 text-center border-0 bg-light">
+                            <div class="card-body">
+                                <h1 class="display-4">{{ comment_count|default(0) }}</h1>
+                                <p class="card-text">Comments Made</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
