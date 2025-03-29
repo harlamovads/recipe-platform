@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, abort, redirect,
 from app.services.user_service import UserService
 from app.services.recipe_service import RecipeService
 from app.models.user import User
+from app.models.recipe import Recipe
 
 user_bp = Blueprint('user', __name__)
 user_service = UserService()
@@ -96,19 +97,89 @@ def user_profile():
         return redirect(url_for('user.login'))
     
     # Get user's recipes
-    from app.services.recipe_service import RecipeService
-    recipe_service = RecipeService()
     user_recipes = recipe_service.get_user_recipes(user._id, page=1, page_size=4)
     
     # Get comment count
     comment_count = recipe_service.count_user_comments(user._id)
+
+    favorite_recipes = []
+    for recipe_id in user.favorite_recipes[:4]:  # Limit to 4 for the profile view
+        recipe = recipe_service.get_recipe_by_id(recipe_id)
+        if recipe:
+            favorite_recipes.append(recipe)
+    
+    # Get recommendations
+    user_profile = user_service.get_recommendation_profile(user._id)
+    recommended_recipes = []
+    
+    if user_profile:
+        pipeline = [
+            # Initial stage to match at least one preference if possible
+            {"$match": {
+                "$or": [
+                    {"tags": {"$in": user_profile.get('dietary_preferences', [])}},
+                    {"cuisine": {"$in": user_profile.get('favorite_cuisines', [])}},
+                    {"difficulty": {"$in": get_difficulty_levels(user_profile.get('cooking_skill_level', 'Beginner'))}}
+                ]
+            }},
+            {"$addFields": {
+                "dietaryMatchCount": {
+                    "$size": {
+                        "$setIntersection": ["$tags", user_profile.get('dietary_preferences', [])]
+                    }
+                },
+                "isFavoriteCuisine": {
+                    "$cond": [
+                        {"$in": ["$cuisine", user_profile.get('favorite_cuisines', [])]},
+                        1,
+                        0
+                    ]
+                },
+                "isAppropriateSkillLevel": {
+                    "$cond": [
+                        {"$in": ["$difficulty", get_difficulty_levels(user_profile.get('cooking_skill_level', 'Beginner'))]},
+                        1,
+                        0
+                    ]
+                }
+            }},
+            {"$addFields": {
+                "recommendationScore": {
+                    "$add": [
+                        "$dietaryMatchCount",
+                        "$isFavoriteCuisine",
+                        "$isAppropriateSkillLevel"
+                    ]
+                }
+            }},
+            # Sort by score (descending)
+            {"$sort": {"recommendationScore": -1}},
+            # Limit results for profile page
+            {"$limit": 2}
+        ]
+        
+        # If no preferences at all, just return popular recipes
+        if not user_profile.get('dietary_preferences') and not user_profile.get('favorite_cuisines'):
+            # Remove matching stage from pipeline
+            pipeline.pop(0)
+        
+        # Execute pipeline
+        recommended_docs = list(recipe_service.collection.aggregate(pipeline))
+        
+        # Convert to Recipe objects
+        recommended_recipes = [Recipe.from_dict(doc) for doc in recommended_docs]
     
     # For API mode
     if request.headers.get('Accept') == 'application/json':
         return jsonify(user.to_api_dict())
     
     # For web interface
-    return render_template('users/profile.html', user=user, user_recipes=user_recipes, comment_count=comment_count)
+    return render_template('users/profile.html', 
+                          user=user, 
+                          user_recipes=user_recipes, 
+                          comment_count=comment_count,
+                          recommended_recipes=recommended_recipes,
+                          favorite_recipes=favorite_recipes)
 
 @user_bp.route('/profile/edit', methods=['GET', 'POST'])
 def edit_profile():
@@ -226,6 +297,7 @@ def recommendations():
         return redirect(url_for('user.login'))
     
     user_id = session['user_id']
+    user = user_service.get_user_by_id(user_id)
     
     # Get user preference profile
     user_profile = user_service.get_recommendation_profile(user_id)
@@ -233,39 +305,113 @@ def recommendations():
     if not user_profile:
         return jsonify({"status": "error", "message": "User not found"}), 404
     
-    # Build filter based on user preferences
-    filters = {}
+    # Get page parameter
+    page = int(request.args.get('page', 1))
+    page_size = 12  # Number of recipes per page
     
-    # Filter by dietary preferences
-    if user_profile['dietary_preferences']:
-        filters['tags'] = {"$in": user_profile['dietary_preferences']}
+    # Generate recommendations using aggregation pipeline for scoring
+    pipeline = [
+        # Initial stage to match at least one preference if possible
+        {"$match": {
+            "$or": [
+                # Match on dietary preferences if any
+                {"tags": {"$in": user_profile.get('dietary_preferences', [])}},
+                # Match on favorite cuisines if any
+                {"cuisine": {"$in": user_profile.get('favorite_cuisines', [])}},
+                # Match on appropriate difficulty based on skill level
+                {"difficulty": {"$in": get_difficulty_levels(user_profile.get('cooking_skill_level', 'Beginner'))}}
+            ]
+        }},
+        # Add scoring fields
+        {"$addFields": {
+            "dietaryMatchCount": {
+                "$size": {
+                    "$setIntersection": ["$tags", user_profile.get('dietary_preferences', [])]
+                }
+            },
+            "isFavoriteCuisine": {
+                "$cond": [
+                    {"$in": ["$cuisine", user_profile.get('favorite_cuisines', [])]},
+                    1,
+                    0
+                ]
+            },
+            "isAppropriateSkillLevel": {
+                "$cond": [
+                    {"$in": ["$difficulty", get_difficulty_levels(user_profile.get('cooking_skill_level', 'Beginner'))]},
+                    1,
+                    0
+                ]
+            }
+        }},
+        # Calculate total score
+        {"$addFields": {
+            "recommendationScore": {
+                "$add": [
+                    "$dietaryMatchCount",
+                    "$isFavoriteCuisine",
+                    "$isAppropriateSkillLevel"
+                ]
+            }
+        }},
+        # Sort by score (descending)
+        {"$sort": {"recommendationScore": -1}},
+        # Skip for pagination
+        {"$skip": (page - 1) * page_size},
+        # Limit results
+        {"$limit": page_size}
+    ]
     
-    # Filter by favorite cuisines
-    if user_profile['favorite_cuisines']:
-        filters['cuisine'] = {"$in": user_profile['favorite_cuisines']}
+    # If no preferences at all, just return popular recipes
+    if not user_profile.get('dietary_preferences') and not user_profile.get('favorite_cuisines'):
+        # Remove matching stage from pipeline
+        pipeline.pop(0)
     
-    # Adjust difficulty based on skill level
-    skill_to_difficulty = {
-        "Beginner": ["Easy"],
-        "Intermediate": ["Easy", "Medium"],
-        "Advanced": ["Easy", "Medium", "Hard"]
+    # Execute pipeline
+    recommended_recipes = list(recipe_service.collection.aggregate(pipeline))
+    
+    # Convert to Recipe objects
+    recipes = [Recipe.from_dict(doc) for doc in recommended_recipes]
+    
+    # Count total matching recipes for pagination
+    count_pipeline = pipeline.copy()
+    # Remove pagination stages
+    if len(count_pipeline) > 3:  # Make sure we have enough stages to remove
+        count_pipeline = count_pipeline[:-2]  # Remove skip and limit
+    count_pipeline.append({"$count": "total"})
+    
+    count_result = list(recipe_service.collection.aggregate(count_pipeline))
+    total_items = count_result[0]['total'] if count_result else 0
+    
+    # Build pagination metadata
+    total_pages = (total_items + page_size - 1) // page_size if total_items > 0 else 1
+    pagination = {
+        "page": page,
+        "page_size": page_size,
+        "total_items": total_items,
+        "total_pages": total_pages
     }
-    
-    filters['difficulty'] = {"$in": skill_to_difficulty.get(user_profile['cooking_skill_level'], ["Easy"])}
-    
-    # Get recommendations
-    recommendations = recipe_service.search_recipes(filters=filters, page=1, page_size=10)
     
     # For API mode
     if request.headers.get('Accept') == 'application/json':
         return jsonify({
-            "recipes": [recipe.to_dict() for recipe in recommendations['recipes']],
-            "pagination": recommendations['pagination']
+            "recipes": [recipe.to_dict() for recipe in recipes],
+            "pagination": pagination
         })
     
     # For web interface
     return render_template(
         'users/recommendations.html',
-        recipes=recommendations['recipes'],
-        pagination=recommendations['pagination']
+        recipes=recipes,
+        pagination=pagination,
+        user=user
     )
+
+def get_difficulty_levels(skill_level):
+    """Get appropriate difficulty levels based on skill level"""
+    skill_to_difficulty = {
+        "Beginner": ["Easy"],
+        "Intermediate": ["Easy", "Medium"],
+        "Advanced": ["Easy", "Medium", "Hard"]
+    }
+    return skill_to_difficulty.get(skill_level, ["Easy"])

@@ -83,26 +83,34 @@
                             <a href="{{ url_for('user.favorites') }}" class="text-decoration-none">View All</a>
                         </div>
                         
-                        {% if user.favorite_recipes %}
+                        {% if favorite_recipes %}
                             <div class="row row-cols-1 row-cols-md-2 g-4">
-                                {% for recipe_id in user.favorite_recipes[:4] %}
+                                {% for recipe in favorite_recipes %}
                                     <div class="col">
                                         <div class="card h-100 recipe-card">
                                             <div class="row g-0">
                                                 <div class="col-4">
-                                                    <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="Recipe">
+                                                    {% if recipe.image_url %}
+                                                    <img src="{{ recipe.image_url }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="{{ recipe.name }}">
+                                                    {% else %}
+                                                    <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="{{ recipe.name }}">
+                                                    {% endif %}
                                                 </div>
                                                 <div class="col-8">
                                                     <div class="card-body">
-                                                        <h5 class="card-title">{{ recipe_id }}</h5>
-                                                        <p class="card-text text-muted">Italian Cuisine</p>
-                                                        <a href="{{ url_for('recipe.get_recipe', recipe_id=recipe_id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                                        <h5 class="card-title">{{ recipe.name }}</h5>
+                                                        <p class="card-text text-muted">{{ recipe.cuisine }} Cuisine</p>
+                                                        <a href="{{ url_for('recipe.get_recipe', recipe_id=recipe._id) }}" class="btn btn-sm btn-outline-primary">View</a>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 {% endfor %}
+                            </div>
+                        {% elif user.favorite_recipes %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-circle me-2"></i> Some of your saved recipes couldn't be loaded. They may have been deleted.
                             </div>
                         {% else %}
                             <div class="alert alert-info">
@@ -163,40 +171,42 @@
                             <i class="fas fa-lightbulb me-2"></i> Based on your preferences, you might enjoy these recipes.
                         </div>
                         
-                        <div class="row row-cols-1 row-cols-md-2 g-4">
-                            <div class="col">
-                                <div class="card h-100 recipe-card">
-                                    <div class="row g-0">
-                                        <div class="col-4">
-                                            <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="Recipe">
-                                        </div>
-                                        <div class="col-8">
-                                            <div class="card-body">
-                                                <h5 class="card-title">Mediterranean Salad</h5>
-                                                <p class="card-text text-muted">Greek Cuisine</p>
-                                                <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                        {% if recommended_recipes %}
+                            <div class="row row-cols-1 row-cols-md-2 g-4">
+                                {% for recipe in recommended_recipes %}
+                                    <div class="col">
+                                        <div class="card h-100 recipe-card">
+                                            <div class="row g-0">
+                                                <div class="col-4">
+                                                    {% if recipe.image_url %}
+                                                    <img src="{{ recipe.image_url }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="{{ recipe.name }}">
+                                                    {% else %}
+                                                    <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="{{ recipe.name }}">
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-8">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title">{{ recipe.name }}</h5>
+                                                        <p class="card-text text-muted">{{ recipe.cuisine }} Cuisine</p>
+                                                        <a href="{{ url_for('recipe.get_recipe', recipe_id=recipe._id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info text-center py-4">
+                                <i class="fas fa-search fa-3x mb-3"></i>
+                                <h4 class="mb-3">No recommended recipes found</h4>
+                                <p class="mb-4">Try updating your preferences in your profile to get more tailored recommendations.</p>
+                                <div class="d-flex justify-content-center gap-3">
+                                    <a href="{{ url_for('user.edit_profile') }}" class="btn btn-primary">Update Preferences</a>
+                                    <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-outline-secondary">Browse All Recipes</a>
                                 </div>
                             </div>
-                            <div class="col">
-                                <div class="card h-100 recipe-card">
-                                    <div class="row g-0">
-                                        <div class="col-4">
-                                            <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="Recipe">
-                                        </div>
-                                        <div class="col-8">
-                                            <div class="card-body">
-                                                <h5 class="card-title">Spicy Tofu Stir Fry</h5>
-                                                <p class="card-text text-muted">Thai Cuisine</p>
-                                                <a href="#" class="btn btn-sm btn-outline-primary">View</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

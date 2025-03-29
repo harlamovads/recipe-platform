@@ -333,13 +333,13 @@ class RecipeService:
         query = {
             "_id": {"$ne": ObjectId(recipe_id)},  # Exclude the source recipe
             "$or": [
-                {"tags": {"$in": source_recipe.tags}},  # Similar tags
+                {"tags": {"$in": source_recipe.tags}},  # Same tags
                 {"cuisine": source_recipe.cuisine}      # Same cuisine
             ]
         }
         
-        # Find similar recipes and sort by relevance
-        # The more tags in common, the higher the score
+        # find similar recipes and sort by relevance
+        # The more tags in common, the better
         pipeline = [
             {"$match": query},
             {"$addFields": {

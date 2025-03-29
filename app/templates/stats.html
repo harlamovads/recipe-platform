@@ -105,19 +105,15 @@
         
         // CHART 1: Cuisine Distribution
         const createCuisineChart = () => {
-            // Process the cuisine data
             const cuisineData = statsData.cuisines.map(item => ({
                 label: item._id,
                 count: item.count
             }));
             
-            // Sort by count (descending)
             cuisineData.sort((a, b) => b.count - a.count);
             
-            // Take top 8 cuisines
             const topCuisines = cuisineData.slice(0, 8);
             
-            // Create the chart
             const ctx = document.getElementById('cuisineChart').getContext('2d');
             new Chart(ctx, {
                 type: 'bar',
@@ -194,19 +190,12 @@
         
         // CHART 3: Popular Tags
         const createTagChart = () => {
-            // Process the tag data
             const tagData = statsData.popular_tags.map(item => ({
                 label: item._id,
                 count: item.count
             }));
-            
-            // Sort by count (descending)
             tagData.sort((a, b) => b.count - a.count);
-            
-            // Take top 10 tags
             const topTags = tagData.slice(0, 10);
-            
-            // Create the chart
             const ctx = document.getElementById('tagChart').getContext('2d');
             new Chart(ctx, {
                 type: 'bar',

@@ -68,8 +68,12 @@
                         Recommended because you like {{ recipe.cuisine }} cuisine
                         {% elif user and recipe.tags|select("in", user.dietary_preferences)|list %}
                         Matches your dietary preferences: {{ recipe.tags|select("in", user.dietary_preferences)|join(", ") }}
-                        {% else %}
+                        {% elif recipe.difficulty in ["Easy", "Medium"] and user and user.cooking_skill_level == "Intermediate" %}
                         Matches your cooking skill level
+                        {% elif recipe.difficulty == "Easy" and user and user.cooking_skill_level == "Beginner" %}
+                        Perfect for beginners
+                        {% else %}
+                        You might enjoy this recipe
                         {% endif %}
                     </div>
                 </div>
