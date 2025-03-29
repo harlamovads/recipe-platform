@@ -68,8 +68,6 @@ class User:
         """Create User object from MongoDB document"""
         if data is None:
             return None
-            
-        # Convert ObjectId favorite_recipes to strings
         favorite_recipes = []
         if data.get("favorite_recipes"):
             favorite_recipes = [str(recipe_id) for recipe_id in data["favorite_recipes"]]
@@ -90,7 +88,6 @@ class User:
     @staticmethod
     def hash_password(password: str) -> str:
         """Hash a password using SHA-256"""
-        # In a real application, use a more secure method like bcrypt
         return hashlib.sha256(password.encode('utf-8')).hexdigest()
     
     def verify_password(self, password: str) -> bool:
@@ -123,7 +120,6 @@ class User:
             "_id": str(self._id),
             "username": self.username,
             "email": self.email,
-            # Don't include password_hash for security
             "dietary_preferences": self.dietary_preferences,
             "favorite_cuisines": self.favorite_cuisines,
             "favorite_recipes": [str(recipe_id) for recipe_id in self.favorite_recipes] if self.favorite_recipes else [],

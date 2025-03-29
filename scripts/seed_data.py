@@ -258,18 +258,15 @@ def create_sample_recipes(user_ids):
     for recipe_data in sample_recipes:
         # Add random user as creator
         recipe_data['user_id'] = random.choice(user_ids)
-        
         # Add timestamps
         now = datetime.utcnow()
         recipe_data['created_at'] = now
         recipe_data['updated_at'] = now
-        
         # Create recipe
         recipe = Recipe(**recipe_data)
         result = mongo.db.recipes.insert_one(recipe.to_dict())
         print(f"Created recipe: {recipe.name}")
-        
-        # Add some random ratings
+        # Dunno where to put it, randomize
         num_ratings = random.randint(3, 10)
         ratings = []
         for _ in range(num_ratings):

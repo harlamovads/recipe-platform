@@ -7,22 +7,14 @@ class Config:
     MONGO_URI = os.environ.get('MONGODB_URI', 'mongodb://mongodb:27017/recipe_platform')
     DEBUG = False
     TESTING = False
-    
-    # MongoDB Collection Names
     RECIPES_COLLECTION = 'recipes'
     USERS_COLLECTION = 'users'
-    
-    # API settings
     API_TITLE = 'Recipe Discovery Platform API'
     API_VERSION = 'v1'
-    
-    # Pagination
     DEFAULT_PAGE_SIZE = 10
     MAX_PAGE_SIZE = 100
-    
-    # Cache settings
     CACHE_TYPE = 'SimpleCache'
-    CACHE_DEFAULT_TIMEOUT = 300  # 5 minutes
+    CACHE_DEFAULT_TIMEOUT = 300
 
 class DevelopmentConfig(Config):
     """Development environment configuration"""
@@ -35,11 +27,8 @@ class TestingConfig(Config):
     
 class ProductionConfig(Config):
     """Production environment configuration"""
-    # In production, ensure SECRET_KEY is properly set in environment variables
-    # and ensure MongoDB connection uses authentication
     pass
 
-# Configuration dictionary
 config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,

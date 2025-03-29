@@ -113,11 +113,10 @@ class Recipe:
         result = []
         for item in items:
             item_copy = item.copy()
-            # Convert any ObjectId to string
             for key, value in item_copy.items():
                 if isinstance(value, ObjectId):
                     item_copy[key] = str(value)
-                elif hasattr(value, 'isoformat'):  # Handle datetime objects
+                elif hasattr(value, 'isoformat'):
                     item_copy[key] = value.isoformat()
             result.append(item_copy)
         return result
@@ -127,7 +126,6 @@ class Recipe:
         """Create Recipe object from MongoDB document"""
         if data is None:
             return None
-            
         return cls(
             name=data.get('name'),
             ingredients=data.get('ingredients', []),
@@ -150,14 +148,11 @@ class Recipe:
     @classmethod
     def create_indexes(cls, collection):
         """Create MongoDB indexes for recipe collection"""
-        # Text index for search functionality
         collection.create_index([
             ("name", "text"),
             ("tags", "text"),
             ("cuisine", "text")
         ], name="recipe_search_index")
-        
-        # Other performance indexes
         collection.create_index("cuisine")
         collection.create_index("difficulty")
         collection.create_index("tags")

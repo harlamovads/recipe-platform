@@ -1,7 +1,3 @@
-/**
- * Recipe Discovery Platform - Main JavaScript
- */
-
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize tooltips
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
