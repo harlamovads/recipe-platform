@@ -86,6 +86,7 @@ def get_recipe(recipe_id):
     # For web interface
     return render_template('recipes/detail.html', recipe=recipe, similar_recipes=similar_recipes)
 
+# In app/views/recipe.py, update the create_recipe route
 @recipe_bp.route('/create', methods=['GET', 'POST'])
 def create_recipe():
     """Create new recipe"""
@@ -100,6 +101,7 @@ def create_recipe():
             }), 201
         
         # For web form submission
+        # Get basic recipe data
         form_data = {
             "name": request.form.get('name'),
             "ingredients": [
@@ -115,14 +117,23 @@ def create_recipe():
             "preparation_time": int(request.form.get('preparation_time')),
             "cooking_time": int(request.form.get('cooking_time')),
             "nutritional_info": {
-                "calories": int(request.form.get('calories', 0)),
-                "protein": int(request.form.get('protein', 0)),
-                "carbs": int(request.form.get('carbs', 0)),
-                "fat": int(request.form.get('fat', 0))
+                "calories": int(request.form.get('calories', 0) or 0),
+                "protein": int(request.form.get('protein', 0) or 0),
+                "carbs": int(request.form.get('carbs', 0) or 0),
+                "fat": int(request.form.get('fat', 0) or 0)
             },
-            "tags": request.form.get('tags').split(','),
             "image_url": request.form.get('image_url')
         }
+        
+        # Process tags
+        tags = request.form.get('tags', '').split(',')
+        # Add dietary tags
+        dietary_tags = request.form.getlist('dietary_tags')
+        
+        # Combine and clean tags
+        all_tags = [tag.strip() for tag in tags if tag.strip()]
+        all_tags.extend(dietary_tags)
+        form_data['tags'] = all_tags
         
         # Handle user_id if logged in
         if 'user_id' in session:
@@ -171,14 +182,23 @@ def edit_recipe(recipe_id):
             "preparation_time": int(request.form.get('preparation_time')),
             "cooking_time": int(request.form.get('cooking_time')),
             "nutritional_info": {
-                "calories": int(request.form.get('calories', 0)),
-                "protein": int(request.form.get('protein', 0)),
-                "carbs": int(request.form.get('carbs', 0)),
-                "fat": int(request.form.get('fat', 0))
+                "calories": int(request.form.get('calories', 0) or 0),
+                "protein": int(request.form.get('protein', 0) or 0),
+                "carbs": int(request.form.get('carbs', 0) or 0),
+                "fat": int(request.form.get('fat', 0) or 0)
             },
-            "tags": request.form.get('tags').split(','),
             "image_url": request.form.get('image_url')
         }
+        
+        # Process tags
+        tags = request.form.get('tags', '').split(',')
+        # Add dietary tags
+        dietary_tags = request.form.getlist('dietary_tags')
+        
+        # Combine and clean tags
+        all_tags = [tag.strip() for tag in tags if tag.strip()]
+        all_tags.extend(dietary_tags)
+        form_data['tags'] = all_tags
         
         recipe_service.update_recipe(recipe_id, form_data)
         return redirect(url_for('recipe.get_recipe', recipe_id=recipe_id))
@@ -186,18 +206,46 @@ def edit_recipe(recipe_id):
     # GET request - render the form with current data
     return render_template('recipes/edit.html', recipe=recipe)
 
-@recipe_bp.route('/<recipe_id>', methods=['DELETE'])
+@recipe_bp.route('/<recipe_id>/delete', methods=['GET', 'DELETE'])
 def delete_recipe(recipe_id):
     """Delete a recipe"""
+    # Check if user is logged in
+    if 'user_id' not in session:
+        if request.method == 'DELETE':
+            return jsonify({"status": "error", "message": "Not authorized"}), 401
+        return redirect(url_for('user.login'))
+    
     try:
+        recipe = recipe_service.get_recipe_by_id(recipe_id)
+        if not recipe:
+            abort(404)
+        
+        # Check if the user is the owner of the recipe
+        if str(recipe.user_id) != session['user_id']:
+            if request.method == 'DELETE':
+                return jsonify({"status": "error", "message": "Not authorized"}), 403
+            return redirect(url_for('recipe.list_recipes'))
+        
+        # Delete the recipe
         success = recipe_service.delete_recipe(recipe_id)
+        
+        if request.method == 'DELETE':
+            return jsonify({"status": "success" if success else "error"})
+        
+        # Redirect if it's a GET request
+        return redirect(url_for('recipe.list_recipes'))
+        
     except bson_errors.InvalidId:
+        if request.method == 'DELETE':
+            return jsonify({"status": "error", "message": "Recipe not found"}), 404
         abort(404)
-    
-    if not success:
-        abort(404)
-    
-    return jsonify({"status": "success"}), 200
+
+
+@recipe_bp.route('/<recipe_id>', methods=['DELETE'])
+def api_delete_recipe(recipe_id):
+    """Delete a recipe (API method)"""
+    return delete_recipe(recipe_id)
+
 
 @recipe_bp.route('/cuisines')
 def list_cuisines():
