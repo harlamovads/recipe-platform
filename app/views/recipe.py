@@ -74,12 +74,17 @@ def get_recipe(recipe_id):
     if not recipe:
         abort(404)
     
+    # Get similar recipes
+    similar_recipes = recipe_service.get_similar_recipes(recipe_id, limit=3)
+    
     # For API mode
     if request.headers.get('Accept') == 'application/json':
-        return jsonify(recipe.to_api_dict())
+        response_data = recipe.to_api_dict()
+        response_data['similar_recipes'] = [r.to_api_dict() for r in similar_recipes]
+        return jsonify(response_data)
     
     # For web interface
-    return render_template('recipes/detail.html', recipe=recipe)
+    return render_template('recipes/detail.html', recipe=recipe, similar_recipes=similar_recipes)
 
 @recipe_bp.route('/create', methods=['GET', 'POST'])
 def create_recipe():

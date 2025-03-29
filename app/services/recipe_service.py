@@ -312,3 +312,52 @@ class RecipeService:
         )
         
         return result.modified_count > 0
+    
+    def get_similar_recipes(self, recipe_id: str, limit: int = 3) -> List[Recipe]:
+        """
+        Get similar recipes based on tags and cuisine
+        
+        Args:
+            recipe_id: Recipe ID to find similar recipes for
+            limit: Maximum number of similar recipes to return
+            
+        Returns:
+            List of similar Recipe objects
+        """
+        # Get the source recipe
+        source_recipe = self.get_recipe_by_id(recipe_id)
+        if not source_recipe:
+            return []
+            
+        # Build a query to find similar recipes
+        query = {
+            "_id": {"$ne": ObjectId(recipe_id)},  # Exclude the source recipe
+            "$or": [
+                {"tags": {"$in": source_recipe.tags}},  # Similar tags
+                {"cuisine": source_recipe.cuisine}      # Same cuisine
+            ]
+        }
+        
+        # Find similar recipes and sort by relevance
+        # The more tags in common, the higher the score
+        pipeline = [
+            {"$match": query},
+            {"$addFields": {
+                "commonTags": {
+                    "$size": {
+                        "$setIntersection": ["$tags", source_recipe.tags]
+                    }
+                },
+                "sameCuisine": {
+                    "$cond": [{"$eq": ["$cuisine", source_recipe.cuisine]}, 1, 0]
+                }
+            }},
+            {"$addFields": {
+                "relevanceScore": {"$add": ["$commonTags", "$sameCuisine"]}
+            }},
+            {"$sort": {"relevanceScore": -1}},
+            {"$limit": limit}
+        ]
+        
+        result = list(self.collection.aggregate(pipeline))
+        return [Recipe.from_dict(doc) for doc in result]
