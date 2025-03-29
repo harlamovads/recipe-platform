@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Personalized Recipe Recommendations{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Recommended For You</h1>
+    <a href="{{ url_for('user.user_profile') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Profile
+    </a>
+</div>
+
+<div class="alert alert-info mb-4">
+    <div class="d-flex">
+        <div class="flex-shrink-0">
+            <i class="fas fa-lightbulb fa-2x text-primary"></i>
+        </div>
+        <div class="flex-grow-1 ms-3">
+            <h4 class="alert-heading">Personalized Recommendations</h4>
+            <p class="mb-0">These recipes are recommended based on your preferences, favorites, and dietary restrictions.</p>
+        </div>
+    </div>
+</div>
+
+{% if recipes %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for recipe in recipes %}
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-card">
+                <div class="position-relative">
+                    {% if recipe.image_url %}
+                    <img src="{{ recipe.image_url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ recipe.name }}">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='img/recipe-placeholder.jpg') }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ recipe.name }}">
+                    {% endif %}
+                    <div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-{{ 'success' if recipe.difficulty == 'Easy' else 'warning' if recipe.difficulty == 'Medium' else 'danger' }}">
+                            {{ recipe.difficulty }}
+                        </span>
+                    </div>
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <button class="btn btn-sm btn-light rounded-circle favorite-toggle" data-recipe-id="{{ recipe._id }}">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ recipe.name }}</h5>
+                    <p class="card-text text-muted mb-1">{{ recipe.cuisine }} Cuisine</p>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <small class="text-muted me-2">
+                                <i class="far fa-clock"></i> {{ recipe.preparation_time + recipe.cooking_time }} mins
+                            </small>
+                            <small class="text-muted">
+                                <i class="fas fa-fire"></i> {{ recipe.nutritional_info.get('calories', 0) }} cal
+                            </small>
+                        </div>
+                    </div>
+                    <div class="recipe-tags mb-3">
+                        {% for tag in recipe.tags[:3] %}
+                        <a href="{{ url_for('recipe.list_recipes', tag=tag) }}" class="badge bg-light text-dark text-decoration-none me-1">{{ tag }}</a>
+                        {% endfor %}
+                    </div>
+                    <div class="recommendation-reason small text-muted mb-2">
+                        <i class="fas fa-info-circle me-1"></i>
+                        {% if user and recipe.cuisine in user.favorite_cuisines %}
+                        Recommended because you like {{ recipe.cuisine }} cuisine
+                        {% elif user and recipe.tags|select("in", user.dietary_preferences)|list %}
+                        Matches your dietary preferences: {{ recipe.tags|select("in", user.dietary_preferences)|join(", ") }}
+                        {% else %}
+                        Matches your cooking skill level
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0 d-grid">
+                    <a href="{{ url_for('recipe.get_recipe', recipe_id=recipe._id) }}" class="btn btn-outline-primary">View Recipe</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if pagination.total_pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('user.recommendations', page=pagination.page-1) }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            
+            {% for page_num in range(1, pagination.total_pages + 1) %}
+            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('user.recommendations', page=page_num) }}">{{ page_num }}</a>
+            </li>
+            {% endfor %}
+            
+            <li class="page-item {% if pagination.page == pagination.total_pages %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('user.recommendations', page=pagination.page+1) }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+{% else %}
+    <div class="alert alert-info text-center py-5">
+        <i class="fas fa-search fa-3x mb-3"></i>
+        <h4 class="mb-3">No recommended recipes found</h4>
+        <p class="mb-4">Try updating your preferences in your profile to get more tailored recommendations.</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('user.edit_profile') }}" class="btn btn-primary">Update Preferences</a>
+            <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-outline-secondary">Browse All Recipes</a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Favorite toggle buttons
+        const favoriteBtns = document.querySelectorAll('.favorite-toggle');
+        favoriteBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const recipeId = this.getAttribute('data-recipe-id');
+                const icon = this.querySelector('i');
+                
+                if (icon.classList.contains('fas')) {
+                    // Remove from favorites
+                    fetch(`/users/recipes/${recipeId}/favorite`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
+                            this.classList.remove('btn-danger');
+                            this.classList.add('btn-light');
+                            
+                            // Show notification
+                            showNotification('Recipe removed from favorites', 'info');
+                        }
+                    });
+                } else {
+                    // Add to favorites
+                    fetch(`/users/recipes/${recipeId}/favorite`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
+                            this.classList.remove('btn-light');
+                            this.classList.add('btn-danger');
+                            
+                            // Show notification
+                            showNotification('Recipe added to favorites', 'success');
+                        }
+                    });
+                }
+            });
+        });
+        
+        // Check which recipes are already favorites
+        fetch('/users/favorites', {
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(favorites => {
+            const favoriteIds = favorites.map(recipe => recipe._id);
+            
+            favoriteBtns.forEach(btn => {
+                const recipeId = btn.getAttribute('data-recipe-id');
+                const icon = btn.querySelector('i');
+                
+                if (favoriteIds.includes(recipeId)) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    btn.classList.remove('btn-light');
+                    btn.classList.add('btn-danger');
+                }
+            });
+        })
+        .catch(error => console.error('Error fetching favorites:', error));
+        
+        // Notification helper function
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            notification.style.zIndex = '1050';
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 150);
+            }, 3000);
+        }
+    });
+</script>
+{% endblock %}
